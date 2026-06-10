@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>得点分析ビジュアライザー</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <section id="input-screen" class="screen">
+    <header class="hero compact">
+      <div>
+        <span class="eyebrow">テスト結果をかんたん分析</span>
+        <h1>得点分析＆二極化ビジュアライザー</h1>
+        <p>生徒名・番号は不要です。点数だけで分析できます。</p>
+      </div>
+      <div class="privacy-label">入力した点数は外部へ送信されません</div>
+    </header>
+
+    <main class="input-layout">
+      <section class="card test-form">
+        <div class="section-heading">
+          <div><h2>テスト情報</h2><p class="muted">教科名、テスト名、満点を入力してください。</p></div>
+          <button id="load-sample" class="button secondary">サンプルを入力</button>
+        </div>
+        <div class="test-fields">
+          <label>教科名
+            <select id="subject">
+              <option>社会</option><option>国語</option><option>数学</option><option>理科</option><option>英語</option><option value="other">その他</option>
+            </select>
+          </label>
+          <label id="other-subject-wrap" class="hidden">その他の教科名<input id="other-subject" type="text" placeholder="例：保健体育"></label>
+          <label>テスト名<input id="test-name" type="text" placeholder="例：1学期期末テスト"></label>
+          <label>満点<input id="max-score" type="number" min="1" max="1000" value="50"><span class="unit">点</span></label>
+        </div>
+      </section>
+
+      <section class="card score-entry">
+        <div class="section-heading">
+          <div><h2>各生徒の点数</h2><p class="muted">最大110人分。空欄は受験者数に含まれません。</p></div>
+          <div class="entry-count">入力済み <b id="entered-count">0</b>人</div>
+        </div>
+        <details class="paste-box">
+          <summary>点数をまとめて貼り付ける</summary>
+          <p class="muted">Excelなどから点数の列を貼り付け、「反映する」を押してください。</p>
+          <textarea id="bulk-scores" rows="4" placeholder="42&#10;35&#10;28&#10;..."></textarea>
+          <button id="apply-bulk" class="button secondary">入力欄へ反映する</button>
+        </details>
+        <div id="score-grid" class="score-grid"></div>
+        <p id="form-error" class="form-error" role="alert"></p>
+        <div class="form-actions">
+          <button id="clear-data" class="button ghost">すべて消去</button>
+          <button id="analyze" class="button primary">分析する</button>
+        </div>
+      </section>
+    </main>
+  </section>
+
+  <section id="analysis-screen" class="screen hidden">
+    <header class="hero">
+      <div>
+        <span id="result-eyebrow" class="eyebrow"></span>
+        <h1>得点分析＆二極化ビジュアライザー</h1>
+        <p id="result-summary"></p>
+      </div>
+      <div class="hero-actions">
+        <button id="back-to-input" class="button hero-button">入力画面に戻る</button>
+        <button id="print-result" class="button hero-button">印刷・PDF保存</button>
+      </div>
+    </header>
+
+    <main class="dashboard">
+      <aside class="sidebar">
+        <section class="card controls">
+          <h2><span class="icon">☷</span>分析範囲の調整</h2>
+          <p class="muted">上位・下位グループの人数を変更すると、数値とグラフが連動します。</p>
+          <div class="control red"><div class="control-title"><strong><i></i>上位グループ抽出</strong><b><span id="top-count"></span>人</b></div><input id="top-slider" type="range"><div class="ticks"><span>1人</span><span>人数を調整</span><span id="top-limit"></span></div></div>
+          <div class="control blue"><div class="control-title"><strong><i></i>下位グループ抽出</strong><b><span id="bottom-count"></span>人</b></div><input id="bottom-slider" type="range"><div class="ticks"><span>1人</span><span>人数を調整</span><span id="bottom-limit"></span></div></div>
+        </section>
+        <section class="card averages">
+          <h2><span class="icon">▥</span>グループ別 平均点</h2>
+          <div class="average-box top"><div><strong>上位グループ平均</strong><span>得点率: <b id="top-rate"></b>%</span></div><p><b id="top-average"></b><small>点</small></p></div>
+          <div class="average-box bottom"><div><strong>下位グループ平均</strong><span>得点率: <b id="bottom-rate"></b>%</span></div><p><b id="bottom-average"></b><small>点</small></p></div>
+          <div class="overall"><strong id="overall-label"></strong><b id="overall-average"></b></div>
+        </section>
+        <section class="card stats">
+          <h2><span class="icon">ⓘ</span>全体統計データ</h2>
+          <div class="stat-grid"><div><span>中央値</span><b id="median"></b></div><div><span>標準偏差</span><b id="stddev"></b></div><div><span>最高点</span><b id="highest"></b></div><div><span>最低点</span><b id="lowest"></b></div></div>
+          <div id="stat-insight" class="insight"></div>
+        </section>
+      </aside>
+      <div class="content">
+        <section class="card chart-card">
+          <div class="chart-heading"><div><h2>得点分布ビジュアライズ</h2><p class="muted">赤：上位、青：下位、グレー：中間層</p></div><div class="tabs"><button class="active" data-mode="distribution">度数分布</button><button data-mode="ranking">順位順グラフ</button></div></div>
+          <div class="legend"><span class="blue-key"></span>下位グループ <span class="gray-key"></span>中間層 <span class="red-key"></span>上位グループ</div>
+          <canvas id="chart"></canvas>
+        </section>
+        <section class="card analysis">
+          <h2><span class="icon">▤</span><span id="analysis-title"></span>：得点傾向の分析とアプローチ案</h2>
+          <div class="polarization"><span>二極化の判定</span><b id="polarization-level"></b></div>
+          <div class="analysis-grid"><div><h3 class="danger">● 数値から読み取れる傾向</h3><div id="analysis-findings"></div></div><div><h3 class="success">● 今後の学習指導への提案</h3><div id="analysis-actions"></div></div></div>
+        </section>
+      </div>
+    </main>
+  </section>
+  <script src="app.js"></script>
+</body>
+</html>
